@@ -1,0 +1,48 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Virtual environment
+.venv/
+myenv
+
+# Distribution / packaging
+.Python
+dist/
+build/
+*.egg-info/
+
+# Testing
+.tox/
+.nox/
+.pytest_cache/
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# MyPy
+.mypy_cache/
+.dmypy.json
+
+# VS Code
+.vscode/
+
+# PyCharm
+.idea/
+*.iml
+
+# Logs and databases
+*.log
+db.sqlite3
+
+# AWS SAM / Serverless Framework
+.aws-sam/
+serverless/
+
+# Docker
+*.dockerignore
+docker-compose.override.yml
