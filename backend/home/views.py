@@ -1,3 +1,6 @@
+import base64
+import json
+from django.http import JsonResponse
 from django.shortcuts import render
 from rest_framework.views import APIView, Response
 from rest_framework import status   
@@ -155,6 +158,18 @@ class GetRequestsView(APIView):
                 success = False
                 message = "Invalid Request Id"
         else:
+            auth_header = request.headers.get("Authorization")
+            if not auth_header:
+                return Response({"message": "Authorization header is required", "success": False}, status=status.HTTP_401_UNAUTHORIZED)
+            try:
+                _, encoded_data = auth_header.split(" ") 
+                decoded_data = base64.b64decode(encoded_data).decode("utf-8")
+                auth_data = json.loads(decoded_data)
+            except Exception as e:
+                return Response({"message": "Invalid Authorization header", "success": False}, status=status.HTTP_400_BAD_REQUEST)
+            areaCode = auth_data.get("areaCode")
+            if not areaCode:
+                return Response({"message": "areaCode is required", "success": False}, status=status.HTTP_400_BAD_REQUEST)
             if "areaCode" not in request.data.keys():
                 return Response({"message": "areaCode is required", "success": False}, status=status.HTTP_400_BAD_REQUEST)
             areaCode = request.data['areaCode'] 
