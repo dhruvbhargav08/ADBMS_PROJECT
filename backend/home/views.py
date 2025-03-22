@@ -58,27 +58,39 @@ class LoginView(APIView):
         # Check for User role
         if role == "User":
             user = User.objects.filter(userName=userName).first()
-            if user and check_password(password, user.password):
-                data = {"userName": user.userName, "areaCode": user.areaCode.areaCode}
-                response = {"message": "Login Successful", "success": True, "data": data}
-                return Response(response, status=status.HTTP_200_OK)
-            
+            if user:
+                if check_password(password, user.password):
+                    data = {"userName": user.userName, "areaCode": user.areaCode.areaCode}
+                    response = {"message": "Login Successful", "success": True, "data": data}
+                    return Response(response, status=status.HTTP_200_OK)
+                else:
+                    return Response({"message": "Login failed. \nUsername password do not match", "success": False}, status=status.HTTP_401_UNAUTHORIZED)
+            else:
+                return Response({"message": "User not found", "success": False}, status=status.HTTP_401_UNAUTHORIZED)
         # Check for Supervisor role
         elif role == "Supervisor":        
             supervisor = Supervisor.objects.filter(userName=userName).first()
-            if supervisor and check_password(password, supervisor.password):
-                data = {"userName": supervisor.userName, "areaCode": supervisor.areaCode.areaCode}
-                response = {"message": "Login Successful", "success": True, "data": data}
-                return Response(response, status=status.HTTP_200_OK)
-        
+            if supervisor:
+                if check_password(password, supervisor.password):
+                    data = {"userName": supervisor.userName, "areaCode": supervisor.areaCode.areaCode}
+                    response = {"message": "Login Successful", "success": True, "data": data}
+                    return Response(response, status=status.HTTP_200_OK)
+                else:
+                    return Response({"message": "Login failed \nUsername password do not match", "success": False}, status=status.HTTP_401_UNAUTHORIZED)
+            else:
+                return Response({"message": "Supervisor not found", "success": False}, status=status.HTTP_401_UNAUTHORIZED)
         # Check for Admin role
         elif role == "Admin":
             admin = Admin.objects.filter(userName=userName).first()
-            if admin and check_password(password, admin.password):
-                data = {"userName": admin.userName}
-                response = {"message": "Login Successful", "success": True, "data": data}
-                return Response(response, status=status.HTTP_200_OK)
-        
+            if admin: 
+                if check_password(password, admin.password):
+                    data = {"userName": admin.userName}
+                    response = {"message": "Login Successful", "success": True, "data": data}
+                    return Response(response, status=status.HTTP_200_OK)
+                else:
+                    return Response({"message": "Login failed \nUsername password do not match", "success": False}, status=status.HTTP_401_UNAUTHORIZED)
+            else:
+                return Response({"message": "Admin not found", "success": False}, status=status.HTTP_401_UNAUTHORIZED)
         # Invalid role or credentials
         response = {"message": "Login Failed", "success": False}
         return Response(response, status=status.HTTP_401_UNAUTHORIZED)
@@ -94,7 +106,13 @@ class RegisterView(APIView):
         userName = request.data['userName']
         password = request.data['password']
         areaCode = request.data['areaCode']
-        
+        if not password or not userName or not areaCode:
+            # this checking will be done on frontend. check whether username, password or areaCode is filled or not.
+            pass
+        # Check if username already exists
+        if User.objects.filter(userName=userName).exists():
+            return Response({"success": False, "message": "Username already taken"}, status=status.HTTP_400_BAD_REQUEST)
+
         # Validate area code
         area = Area.objects.filter(areaCode=areaCode).first()
         if not area:
@@ -123,6 +141,8 @@ class RequestView(APIView):
         if not requestStatus or not service or not areaCode or not description or not serviceCode:
             return Response({"success": False, "message": "Invalid Data"}, status.HTTP_400_BAD_REQUEST)
         area = Area.objects.filter(areaCode=areaCode).first()
+        if not area:
+            return Response({"success": False, "message": "Invalid Area Code"}, status.HTTP_400_BAD_REQUEST)
         obj = Request.objects.create(areaCode=area, description=description, serviceCode=serviceCode, service=service, status=requestStatus)
         obj.save()
         return Response({"success": True, "message": "Request added successfully"}, status.HTTP_200_OK)
@@ -142,7 +162,7 @@ class RequestView(APIView):
                 machine_objs = ReqMachine.objects.filter(requestId=requestId).values()
                 material_objs = ReqMaterial.objects.filter(requestId=requestId).values()
                 request_data = {      
-                    "requestId": request_obj['requestId'],
+                    "id": request_obj['requestId'],
                     "areaCode_id": request_obj['areaCode_id'],
                     "service": request_obj['service'],
                     "serviceCode": request_obj['serviceCode'],
@@ -157,26 +177,38 @@ class RequestView(APIView):
                     "materials": list(material_objs)
                 }
                 return Response({"message": "Request fetched successfully", "success": True, "data": request_data}, status=status.HTTP_200_OK)
-            return Response({"message": "Invalid Request Id", "success": False}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": "Invalid Request Id", "success": False, "data": {}}, status=status.HTTP_400_BAD_REQUEST)
 
         # Authorization header processing
-        auth_header = request.headers.get("Authorization")
-        if not auth_header:
-            return Response({"message": "Authorization header is required", "success": False}, status=status.HTTP_401_UNAUTHORIZED)
-
-        try:
-            _, encoded_data = auth_header.split(" ") 
-            decoded_data = base64.b64decode(encoded_data).decode("utf-8")
-            auth_data = json.loads(decoded_data)
-        except Exception:
-            return Response({"message": "Invalid Authorization header", "success": False}, status=status.HTTP_400_BAD_REQUEST)
+        # auth_header = request.headers.get("Authorization")
+        # if not auth_header:
+        #     return Response({"message": "Authorization header is required", "success": False}, status=status.HTTP_401_UNAUTHORIZED)
+        # try:
+        #     _, encoded_data = auth_header.split(" ") 
+        #     decoded_data = base64.b64decode(encoded_data).decode("utf-8")
+        #     auth_data = json.loads(decoded_data)
+        # except Exception:
+        #     return Response({"message": "Invalid Authorization header", "success": False}, status=status.HTTP_400_BAD_REQUEST)
         
-        areaCode = auth_data.get("areaCode")
+        # areaCode = auth_data.get("areaCode")
+        areaCode = request.data['areaCode']
         area = Area.objects.filter(areaCode=areaCode).first()
         if not area:
-            return Response({"message": "Invalid areaCode", "success": False}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"message": "Invalid areaCode", "success": False, "data": {}}, status=status.HTTP_404_NOT_FOUND)
         areaRequests = Request.objects.filter(areaCode=area).values()
-        return Response({"message": "Requests fetched successfully", "success": True, "data": list(areaRequests)}, status=status.HTTP_200_OK)
+        requests = []
+        for areaRequest in areaRequests:
+            request_data = {      
+                    "id": areaRequest['requestId'],
+                    "areaCode_id": areaRequest['areaCode_id'],
+                    "service": areaRequest['service'],
+                    "serviceCode": areaRequest['serviceCode'],
+                    "description": areaRequest['description'],
+                    "progress": areaRequest['progress'],
+                    "status": areaRequest['status'],
+                    }
+            requests.append(request_data)
+        return Response({"message": "Requests fetched successfully", "success": True, "data": requests}, status=status.HTTP_200_OK)
 
 class GetManpower(APIView):
     """
@@ -206,20 +238,20 @@ class GetManpower(APIView):
             manpower_obj = ManPower.objects.filter(workerType=workerType).values().first()
             if manpower_obj:
                 return Response(
-                    {"success": True, "message": "Data fetched successfully", "data": {"manpower": manpower_obj}},
+                    {"success": True, "message": "Data fetched successfully", "data": manpower_obj},
                     status=status.HTTP_200_OK
                 )
             else:
-                return Response({"success": False, "message": "No data found"}, status=status.HTTP_404_NOT_FOUND)
+                return Response({"success": False, "message": "No data found","data": {}}, status=status.HTTP_404_NOT_FOUND)
         else:
             # Fetch all manpower records
             manpower = ManPower.objects.all()
             if not manpower.exists():
-                return Response({"success": False, "message": "No data found"}, status=status.HTTP_404_NOT_FOUND)
+                return Response({"success": False, "message": "No data found", "data": {}}, status=status.HTTP_404_NOT_FOUND)
             
             manpower_data = list(manpower.values())
             return Response(
-                {"success": True, "message": "Data fetched successfully", "data": {"manpower": manpower_data}},
+                {"success": True, "message": "Data fetched successfully", "data": manpower_data},
                 status=status.HTTP_200_OK
             )
 
@@ -251,20 +283,19 @@ class GetMachine(APIView):
             machine_obj = Machine.objects.filter(machineType=machineType).values().first()
             if machine_obj:
                 return Response(
-                    {"success": True, "message": "Data fetched successfully", "data": {"machine": machine_obj}},
+                    {"success": True, "message": "Data fetched successfully", "data":machine_obj},
                     status=status.HTTP_200_OK
                 )
             else:
-                return Response({"success": False, "message": "No data found"}, status=status.HTTP_404_NOT_FOUND)
+                return Response({"success": False, "message": "No data found", "data": {}}, status=status.HTTP_404_NOT_FOUND)
         else:
             # Fetch all machine records
             machine = Machine.objects.all()
             if not machine.exists():
-                return Response({"success": False, "message": "No data found"}, status=status.HTTP_404_NOT_FOUND)
-
+                return Response({"success": False, "message": "No data found", "data": {}}, status=status.HTTP_404_NOT_FOUND)
             machine_data = list(machine.values())
             return Response(
-                {"success": True, "message": "Data fetched successfully", "data": {"machines": machine_data}},
+                {"success": True, "message": "Data fetched successfully", "data": machine_data},
                 status=status.HTTP_200_OK
             )
 
@@ -296,20 +327,19 @@ class GetMaterial(APIView):
             material_obj = Material.objects.filter(materialType=materialType).values().first()
             if material_obj:
                 return Response(
-                    {"success": True, "message": "Data fetched successfully", "data": {"material": material_obj}},
+                    {"success": True, "message": "Data fetched successfully", "data": material_obj},
                     status=status.HTTP_200_OK
                 )
             else:
-                return Response({"success": False, "message": "No data found"}, status=status.HTTP_404_NOT_FOUND)
+                return Response({"success": False, "message": "No data found", "data": {}}, status=status.HTTP_404_NOT_FOUND)
         else:
             # Fetch all material records
             material = Material.objects.all()
             if not material.exists():
-                return Response({"success": False, "message": "No data found"}, status=status.HTTP_404_NOT_FOUND)
-
+                return Response({"success": False, "message": "No data found", "data": {}}, status=status.HTTP_404_NOT_FOUND)
             material_data = list(material.values())
             return Response(
-                {"success": True, "message": "Data fetched successfully", "data": {"materials": material_data}},
+                {"success": True, "message": "Data fetched successfully", "data": material_data},
                 status=status.HTTP_200_OK
             )
     
@@ -338,26 +368,25 @@ class GetRoad(APIView):
         """
         if roadId:
             if not can_convert_to_int(roadId):
-                return Response({"message": "Invalid Road Id", "success": False}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"message": "Invalid Road Id", "success": False, "data": {}}, status=status.HTTP_400_BAD_REQUEST)
             roadId = int(roadId)
             # Fetch road details for a specific road ID
             road_obj = Road.objects.filter(roadId=roadId).values().first()
             if road_obj:
                 return Response(
-                    {"success": True, "message": "Data fetched successfully", "data": {"road": road_obj}},
+                    {"success": True, "message": "Data fetched successfully", "data": road_obj},
                     status=status.HTTP_200_OK
                 )
             else:
-                return Response({"success": False, "message": "No data found"}, status=status.HTTP_404_NOT_FOUND)
+                return Response({"success": False, "message": "No data found", "data": {}}, status=status.HTTP_404_NOT_FOUND)
         else:
             # Fetch all road records
             roads = Road.objects.all()
             if not roads.exists():
-                return Response({"success": False, "message": "No data found"}, status=status.HTTP_404_NOT_FOUND)
-
+                return Response({"success": False, "message": "No data found", "data": {}}, status=status.HTTP_404_NOT_FOUND)
             road_data = list(roads.values())
             return Response(
-                {"success": True, "message": "Data fetched successfully", "data": {"roads": road_data}},
+                {"success": True, "message": "Data fetched successfully", "data": road_data},
                 status=status.HTTP_200_OK
             )
 
@@ -386,26 +415,26 @@ class GetStreetLight(APIView):
         """
         if streetLightId:
             if not can_convert_to_int(streetLightId):
-                return Response({"message": "Invalid Street Light Id", "success": False}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"message": "Invalid Street Light Id", "success": False, "data": {}}, status=status.HTTP_400_BAD_REQUEST)
             streetLightId = int(streetLightId)
             # Fetch street light details for a specific street light ID
             street_light_obj = StreetLight.objects.filter(streetLightId=streetLightId).values().first()
             if street_light_obj:
                 return Response(
-                    {"success": True, "message": "Data fetched successfully", "data": {"streetLight": street_light_obj}},
+                    {"success": True, "message": "Data fetched successfully", "data": street_light_obj},
                     status=status.HTTP_200_OK
                 )
             else:
-                return Response({"success": False, "message": "No data found"}, status=status.HTTP_404_NOT_FOUND)
+                return Response({"success": False, "message": "No data found", "data": {}}, status=status.HTTP_404_NOT_FOUND)
         else:
             # Fetch all street light records
             street_lights = StreetLight.objects.all()
             if not street_lights.exists():
-                return Response({"success": False, "message": "No data found"}, status=status.HTTP_404_NOT_FOUND)
+                return Response({"success": False, "message": "No data found", "data": {}}, status=status.HTTP_404_NOT_FOUND)
 
             street_light_data = list(street_lights.values())
             return Response(
-                {"success": True, "message": "Data fetched successfully", "data": {"streetLights": street_light_data}},
+                {"success": True, "message": "Data fetched successfully", "data": street_light_data},
                 status=status.HTTP_200_OK
             )
         
@@ -434,13 +463,13 @@ class GetDrainage(APIView):
         """
         if drainageId:
             if not can_convert_to_int(drainageId):
-                return Response({"message": "Invalid Drainage Id", "success": False}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"message": "Invalid Drainage Id", "success": False, "data": {}}, status=status.HTTP_400_BAD_REQUEST)
             drainageId = int(drainageId)
             # Fetch drainage details for a specific drainage ID
             drainage_obj = Drainage.objects.filter(drainageId=drainageId).values().first()
             if drainage_obj:
                 return Response(
-                    {"success": True, "message": "Data fetched successfully", "data": {"drainage": drainage_obj}},
+                    {"success": True, "message": "Data fetched successfully", "data": drainage_obj},
                     status=status.HTTP_200_OK
                 )
             else:
@@ -453,6 +482,6 @@ class GetDrainage(APIView):
 
             drainage_data = list(drainages.values())
             return Response(
-                {"success": True, "message": "Data fetched successfully", "data": {"drainages": drainage_data}},
+                {"success": True, "message": "Data fetched successfully", "data": drainage_data},
                 status=status.HTTP_200_OK
             )
