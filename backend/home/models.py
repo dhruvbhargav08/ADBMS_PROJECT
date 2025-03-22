@@ -12,7 +12,7 @@ class Area(models.Model):
 class User(models.Model):
     userName = models.CharField(primary_key=True, unique =True, max_length=100)
     password = models.CharField(max_length=100)
-    areaCode = models.ForeignKey(Area, on_delete=models.CASCADE)
+    areaCode = models.ForeignKey(Area, on_delete=models.CASCADE, to_field='areaCode', db_column='areaCode')
     def save(self, *args, **kwargs):
         if not self.password.startswith(('pbkdf2_sha256$', 'bcrypt$', 'argon2$')):
             self.password = make_password(self.password)
@@ -24,7 +24,7 @@ class User(models.Model):
 class Supervisor(models.Model):
     userName = models.CharField(primary_key=True, unique=True, max_length=100)
     password = models.CharField(max_length=100)
-    areaCode = models.OneToOneField(Area, on_delete=models.CASCADE)
+    areaCode = models.OneToOneField(Area, on_delete=models.CASCADE, to_field='areaCode', db_column='areaCode')
     def save(self, *args, **kwargs):
         if not self.password.startswith(('pbkdf2_sha256$', 'bcrypt$', 'argon2$')):
             self.password = make_password(self.password)
@@ -46,14 +46,14 @@ class Admin(models.Model):
 
 class Road(models.Model):
     roadId = models.IntegerField(primary_key=True, unique=True) 
-    areaCode = models.ForeignKey(Area, on_delete=models.CASCADE)
+    areaCode = models.ForeignKey(Area, on_delete=models.CASCADE, to_field='areaCode', db_column='areaCode')
 
     class Meta:
         db_table = 'road'
 
 class StreetLight(models.Model):
     streetLightId = models.IntegerField(primary_key = True, unique = True)
-    areaCode = models.ForeignKey(Area, on_delete=models.CASCADE)
+    areaCode = models.ForeignKey(Area, on_delete=models.CASCADE, to_field='areaCode', db_column='areaCode')
     status = models.BooleanField(default = False)
 
     class Meta:
@@ -61,7 +61,7 @@ class StreetLight(models.Model):
 
 class Drainage(models.Model):
     drainageId = models.IntegerField(primary_key = True, unique = True)
-    areaCode = models.ForeignKey(Area, on_delete=models.CASCADE)
+    areaCode = models.ForeignKey(Area, on_delete=models.CASCADE, to_field='areaCode', db_column='areaCode')
     status = models.BooleanField(default = False)
 
     class Meta:
@@ -81,7 +81,7 @@ class Request(models.Model):
     ]
 
     requestId = models.AutoField(primary_key=True)
-    areaCode = models.ForeignKey(Area, on_delete=models.CASCADE)
+    areaCode = models.ForeignKey(Area, on_delete=models.CASCADE, to_field='areaCode', db_column='areaCode')
     service = models.CharField(max_length=10, choices=SERVICE_CHOICES)
     serviceCode = models.IntegerField()
     description = models.TextField(blank=True, null=True)
@@ -92,7 +92,7 @@ class Request(models.Model):
         db_table = 'request'
     
 class SchedulingQueue(models.Model):
-    requestId = models.OneToOneField(Request, on_delete=models.CASCADE, primary_key=True)
+    requestId = models.OneToOneField(Request, on_delete=models.CASCADE, primary_key=True, to_field='requestId', db_column='requestId')
     priority = models.IntegerField()
     
     class Meta:
@@ -102,7 +102,7 @@ class SchedulingQueue(models.Model):
         ]
 
 class Stats(models.Model):
-    requestId = models.OneToOneField(Request, on_delete=models.CASCADE, primary_key=True)
+    requestId = models.OneToOneField(Request, on_delete=models.CASCADE, primary_key=True, to_field='requestId', db_column='requestId')
     raiseDate = models.DateTimeField(auto_now_add=True)
     startDate = models.DateTimeField(null=True, blank=True)
     finishDate = models.DateTimeField(null=True, blank=True)
@@ -150,8 +150,8 @@ class Material(models.Model):
         db_table = 'material'
     
 class ReqManpower(models.Model):
-    requestId = models.ForeignKey(Request, on_delete=models.CASCADE)
-    workerType = models.ForeignKey(ManPower, on_delete=models.CASCADE)
+    requestId = models.ForeignKey(Request, on_delete=models.CASCADE, to_field='requestId', db_column='requestId')
+    workerType = models.ForeignKey(ManPower, on_delete=models.CASCADE, to_field='workerType', db_column='workerType')
     workerCount = models.IntegerField(default=0)
 
     class Meta:
@@ -161,8 +161,8 @@ class ReqManpower(models.Model):
         ]
 
 class ReqMachine(models.Model):
-    requestId = models.ForeignKey(Request, on_delete=models.CASCADE)
-    machineType = models.ForeignKey(Machine, on_delete=models.CASCADE)
+    requestId = models.ForeignKey(Request, on_delete=models.CASCADE, to_field='requestId', db_column='requestId')
+    machineType = models.ForeignKey(Machine, on_delete=models.CASCADE, to_field='machineType', db_column='machineType')
     machineCount = models.IntegerField(default=0)
 
     class Meta:
@@ -172,8 +172,8 @@ class ReqMachine(models.Model):
         ]
     
 class ReqMaterial(models.Model):
-    requestId = models.ForeignKey(Request, on_delete=models.CASCADE)
-    materialType = models.ForeignKey(Material, on_delete=models.CASCADE)
+    requestId = models.ForeignKey(Request, on_delete=models.CASCADE, to_field='requestId', db_column='requestId')
+    materialType = models.ForeignKey(Material, on_delete=models.CASCADE, to_field='materialType', db_column='materialType')
     materialCount = models.IntegerField(default=0)
 
     class Meta:
