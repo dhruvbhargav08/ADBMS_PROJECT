@@ -17,18 +17,14 @@ def get_tokens_for_user(user, role):
 
 # Used for login purpose.
 class LoginView(APIView):
-    def get(self, request):
+    def post(self, request):
         userName = request.data['userName']
         password = request.data['password']
         role = request.data['role']
         if role == "User":
             user = User.objects.filter(userName=userName).first()
             if user and check_password(password, user.password):
-                areaRequest = Request.objects.filter(areaCode=user.areaCode)
-                if areaRequest:
-                    data= {"request": areaRequest}
-                else:
-                    data = {"data": "No Request"}
+                data = {"userName": user.userName, "areaCode": user.areaCode.areaCode}
                 response = {
                     "message": "Login Successful",
                     "success": True,
@@ -44,11 +40,7 @@ class LoginView(APIView):
         elif role == "Supervisor":        
             supervisor = Supervisor.objects.filter(userName=userName).first()
             if supervisor and check_password(password, supervisor.password):
-                areaRequest = Request.objects.filter(areaCode=supervisor.areaCode)
-                if areaRequest:
-                    data= {"request": areaRequest}
-                else:
-                    data = {"data": "No Request"}
+                data = {"userName": supervisor.userName, "areaCode": supervisor.areaCode.areaCode}
                 response = {
                     "message": "Login Successful",
                     "success": True,
@@ -62,9 +54,9 @@ class LoginView(APIView):
                 }
                 return Response(response, status=status.HTTP_401_UNAUTHORIZED)
         elif role == "Admin":
-            admin = Admin.objects.fliter(userName=userName).first()
+            admin = Admin.objects.filter(userName=userName).first()
             if admin and check_password(password, admin.password):
-                data = {} 
+                data = {"userName": admin.userName}
                 response = {
                     "message": "Login Successful",
                     "success": True,
@@ -93,6 +85,12 @@ class RegisterView(APIView):
         password = request.data['password']
         areaCode = request.data['areaCode']
         area = Area.objects.filter(areaCode=areaCode).first()
+        if not area:
+            response = {
+                "success": False,
+                "message": "Invalid Area Code"
+            }
+            return Response(response, status.HTTP_400_BAD_REQUEST)
         obj = User.objects.create(userName=userName, password=password, areaCode=area)
         obj.save()
         response={
@@ -124,3 +122,66 @@ class CreateRequestView(APIView):
         }
         return Response(response, status.HTTP_200_OK)
         
+# Used to get list of requests for a particular area.
+class GetRequestsView(APIView):
+    def get(self, request, requestId=None):
+        if requestId:  
+            request_obj = Request.objects.filter(requestId=requestId).values()[0]
+            if request_obj:
+                stats_obj = Stats.objects.filter(requestId=requestId).values().first()
+                manpower_objs = ReqManpower.objects.filter(requestId=requestId).values()
+                machine_objs = ReqMachine.objects.filter(requestId=requestId).values()
+                material_objs = ReqMaterial.objects.filter(requestId=requestId).values()
+                request = {      
+                            "requestId": request_obj['requestId'],
+                            "areaCode_id": request_obj['areaCode_id'],
+                            "service": request_obj['service'],
+                            "serviceCode": request_obj['serviceCode'],
+                            "description": request_obj['description'],
+                            "progress": request_obj['progress'],
+                            "status": request_obj['status'],
+                            "raiseDate": stats_obj["raiseDate"] if stats_obj else "",
+                            "startDate": stats_obj["startDate"] if stats_obj else "",
+                            "finishDate": stats_obj["finishDate"] if stats_obj else "",
+                            "manpower": list(manpower_objs),
+                            "machines": list(machine_objs),
+                            "materials": list(material_objs)
+                            }
+                data = {"request": request}
+                success = True 
+                message = "Request fetched successfully" 
+            else:
+                data = {"request": "No Request"}
+                success = False
+                message = "Invalid Request Id"
+        else:
+            if "areaCode" not in request.data.keys():
+                return Response({"message": "areaCode is required", "success": False}, status=status.HTTP_400_BAD_REQUEST)
+            areaCode = request.data['areaCode'] 
+            if not areaCode:
+                return Response({"message": "areaCode is required", "success": False}, status=status.HTTP_400_BAD_REQUEST)
+            area = Area.objects.filter(areaCode=areaCode).first()
+            if not area:
+                return Response({"message": "Invalid areaCode", "success": False}, status=status.HTTP_404_NOT_FOUND)
+            areaRequests = Request.objects.filter(areaCode=area).values()
+            requests = []
+            for areaRequest in areaRequests:
+                request = {      
+                            "requestId": areaRequest['requestId'],
+                            "areaCode_id": areaRequest['areaCode_id'],
+                            "service": areaRequest['service'],
+                            "serviceCode": areaRequest['serviceCode'],
+                            "description": areaRequest['description'],
+                            "progress": areaRequest['progress'],
+                            "status": areaRequest['status']
+                        }
+                requests.append(request)
+            data = {"requests": requests if requests else "No Request"}
+            message = "Requests fetched successfully" if requests else "No Requests"
+            success = True if requests else False
+        response = {
+            "message": message,
+            "success": success,
+            "data": data
+        }
+        return Response(response, status=status.HTTP_200_OK)
