@@ -9,6 +9,22 @@ from django.contrib.auth.hashers import check_password
 from rest_framework_simplejwt.tokens import RefreshToken
 
 
+def can_convert_to_int(s):
+    """
+    Checks if a given string can be converted to an integer.
+
+    Args:
+        s (str): Input string.
+
+    Returns:
+        bool: True if it can be converted, False otherwise.
+    """
+    try:
+        int(s)  # Try converting to integer
+        return True
+    except ValueError:
+        return False
+
 def get_tokens_for_user(user, role):
     """
     Generate JWT tokens (access and refresh) for a given user.
@@ -103,11 +119,9 @@ class RequestView(APIView):
         serviceCode = request.data['serviceCode']
         service = request.data['service']
         requestStatus = request.data['status']
-
         # Validate input data
         if not requestStatus or not service or not areaCode or not description or not serviceCode:
             return Response({"success": False, "message": "Invalid Data"}, status.HTTP_400_BAD_REQUEST)
-
         area = Area.objects.filter(areaCode=areaCode).first()
         obj = Request.objects.create(areaCode=area, description=description, serviceCode=serviceCode, service=service, status=requestStatus)
         obj.save()
@@ -118,6 +132,9 @@ class RequestView(APIView):
         Fetch service requests based on request ID or area code.
         """
         if requestId:  
+            if not can_convert_to_int(requestId):
+                return Response({"message": "Invalid Request Id", "success": False}, status=status.HTTP_400_BAD_REQUEST)
+            requestId = int(requestId)
             request_obj = Request.objects.filter(requestId=requestId).values().first()
             if request_obj:
                 stats_obj = Stats.objects.filter(requestId=requestId).values().first()
@@ -140,7 +157,7 @@ class RequestView(APIView):
                     "materials": list(material_objs)
                 }
                 return Response({"message": "Request fetched successfully", "success": True, "data": request_data}, status=status.HTTP_200_OK)
-            return Response({"message": "Invalid Request Id", "success": False, "data": "No Request"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": "Invalid Request Id", "success": False}, status=status.HTTP_400_BAD_REQUEST)
 
         # Authorization header processing
         auth_header = request.headers.get("Authorization")
@@ -158,6 +175,284 @@ class RequestView(APIView):
         area = Area.objects.filter(areaCode=areaCode).first()
         if not area:
             return Response({"message": "Invalid areaCode", "success": False}, status=status.HTTP_404_NOT_FOUND)
-        
         areaRequests = Request.objects.filter(areaCode=area).values()
         return Response({"message": "Requests fetched successfully", "success": True, "data": list(areaRequests)}, status=status.HTTP_200_OK)
+
+class GetManpower(APIView):
+    """
+    API endpoint to retrieve manpower data.
+
+    Methods:
+    --------
+    get(request, workerType=None):
+        - If workerType is provided, fetches the specific manpower record.
+        - If workerType is not provided, fetches all manpower records.
+        - Returns appropriate success or error messages.
+    """
+
+    def get(self, request, workerType=None):
+        """
+        Handles GET request to fetch manpower details.
+
+        Parameters:
+            request (HttpRequest): The HTTP request object.
+            workerType (str, optional): The type of worker to fetch (e.g., 'Electrician', 'Mason').
+
+        Returns:
+            Response: JSON response containing manpower data or an error message.
+        """
+        if workerType:
+            # Fetch manpower details for a specific worker type
+            manpower_obj = ManPower.objects.filter(workerType=workerType).values().first()
+            if manpower_obj:
+                return Response(
+                    {"success": True, "message": "Data fetched successfully", "data": {"manpower": manpower_obj}},
+                    status=status.HTTP_200_OK
+                )
+            else:
+                return Response({"success": False, "message": "No data found"}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            # Fetch all manpower records
+            manpower = ManPower.objects.all()
+            if not manpower.exists():
+                return Response({"success": False, "message": "No data found"}, status=status.HTTP_404_NOT_FOUND)
+            
+            manpower_data = list(manpower.values())
+            return Response(
+                {"success": True, "message": "Data fetched successfully", "data": {"manpower": manpower_data}},
+                status=status.HTTP_200_OK
+            )
+
+class GetMachine(APIView):
+    """
+    API endpoint to retrieve machine data.
+
+    Methods:
+    --------
+    get(request, machineType=None):
+        - If machineType is provided, fetches the specific machine record.
+        - If machineType is not provided, fetches all machine records.
+        - Returns appropriate success or error messages.
+    """
+
+    def get(self, request, machineType=None):
+        """
+        Handles GET request to fetch machine details.
+
+        Parameters:
+            request (HttpRequest): The HTTP request object.
+            machineType (str, optional): The type of machine to fetch (e.g., 'Excavator', 'Bulldozer').
+
+        Returns:
+            Response: JSON response containing machine data or an error message.
+        """
+        if machineType:
+            # Fetch machine details for a specific machine type
+            machine_obj = Machine.objects.filter(machineType=machineType).values().first()
+            if machine_obj:
+                return Response(
+                    {"success": True, "message": "Data fetched successfully", "data": {"machine": machine_obj}},
+                    status=status.HTTP_200_OK
+                )
+            else:
+                return Response({"success": False, "message": "No data found"}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            # Fetch all machine records
+            machine = Machine.objects.all()
+            if not machine.exists():
+                return Response({"success": False, "message": "No data found"}, status=status.HTTP_404_NOT_FOUND)
+
+            machine_data = list(machine.values())
+            return Response(
+                {"success": True, "message": "Data fetched successfully", "data": {"machines": machine_data}},
+                status=status.HTTP_200_OK
+            )
+
+class GetMaterial(APIView):
+    """
+    API endpoint to retrieve material data.
+
+    Methods:
+    --------
+    get(request, materialType=None):
+        - If materialType is provided, fetches the specific material record.
+        - If materialType is not provided, fetches all material records.
+        - Returns appropriate success or error messages.
+    """
+
+    def get(self, request, materialType=None):
+        """
+        Handles GET request to fetch material details.
+
+        Parameters:
+            request (HttpRequest): The HTTP request object.
+            materialType (str, optional): The type of material to fetch (e.g., 'Cement', 'Pipes').
+
+        Returns:
+            Response: JSON response containing material data or an error message.
+        """
+        if materialType:
+            # Fetch material details for a specific material type
+            material_obj = Material.objects.filter(materialType=materialType).values().first()
+            if material_obj:
+                return Response(
+                    {"success": True, "message": "Data fetched successfully", "data": {"material": material_obj}},
+                    status=status.HTTP_200_OK
+                )
+            else:
+                return Response({"success": False, "message": "No data found"}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            # Fetch all material records
+            material = Material.objects.all()
+            if not material.exists():
+                return Response({"success": False, "message": "No data found"}, status=status.HTTP_404_NOT_FOUND)
+
+            material_data = list(material.values())
+            return Response(
+                {"success": True, "message": "Data fetched successfully", "data": {"materials": material_data}},
+                status=status.HTTP_200_OK
+            )
+    
+class GetRoad(APIView):
+    """
+    API endpoint to retrieve road data.
+
+    Methods:
+    --------
+    get(request, roadId=None):
+        - If roadId is provided, fetches the specific road record.
+        - If roadId is not provided, fetches all road records.
+        - Returns appropriate success or error messages.
+    """
+
+    def get(self, request, roadId=None):
+        """
+        Handles GET request to fetch road details.
+
+        Parameters:
+            request (HttpRequest): The HTTP request object.
+            roadId (int, optional): The ID of the road to fetch.
+
+        Returns:
+            Response: JSON response containing road data or an error message.
+        """
+        if roadId:
+            if not can_convert_to_int(roadId):
+                return Response({"message": "Invalid Road Id", "success": False}, status=status.HTTP_400_BAD_REQUEST)
+            roadId = int(roadId)
+            # Fetch road details for a specific road ID
+            road_obj = Road.objects.filter(roadId=roadId).values().first()
+            if road_obj:
+                return Response(
+                    {"success": True, "message": "Data fetched successfully", "data": {"road": road_obj}},
+                    status=status.HTTP_200_OK
+                )
+            else:
+                return Response({"success": False, "message": "No data found"}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            # Fetch all road records
+            roads = Road.objects.all()
+            if not roads.exists():
+                return Response({"success": False, "message": "No data found"}, status=status.HTTP_404_NOT_FOUND)
+
+            road_data = list(roads.values())
+            return Response(
+                {"success": True, "message": "Data fetched successfully", "data": {"roads": road_data}},
+                status=status.HTTP_200_OK
+            )
+
+class GetStreetLight(APIView):
+    """
+    API endpoint to retrieve street light data.
+
+    Methods:
+    --------
+    get(request, streetLightId=None):
+        - If streetLightId is provided, fetches the specific street light record.
+        - If streetLightId is not provided, fetches all street light records.
+        - Returns appropriate success or error messages.
+    """
+
+    def get(self, request, streetLightId=None):
+        """
+        Handles GET request to fetch street light details.
+
+        Parameters:
+            request (HttpRequest): The HTTP request object.
+            streetLightId (int, optional): The ID of the street light to fetch.
+
+        Returns:
+            Response: JSON response containing street light data or an error message.
+        """
+        if streetLightId:
+            if not can_convert_to_int(streetLightId):
+                return Response({"message": "Invalid Street Light Id", "success": False}, status=status.HTTP_400_BAD_REQUEST)
+            streetLightId = int(streetLightId)
+            # Fetch street light details for a specific street light ID
+            street_light_obj = StreetLight.objects.filter(streetLightId=streetLightId).values().first()
+            if street_light_obj:
+                return Response(
+                    {"success": True, "message": "Data fetched successfully", "data": {"streetLight": street_light_obj}},
+                    status=status.HTTP_200_OK
+                )
+            else:
+                return Response({"success": False, "message": "No data found"}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            # Fetch all street light records
+            street_lights = StreetLight.objects.all()
+            if not street_lights.exists():
+                return Response({"success": False, "message": "No data found"}, status=status.HTTP_404_NOT_FOUND)
+
+            street_light_data = list(street_lights.values())
+            return Response(
+                {"success": True, "message": "Data fetched successfully", "data": {"streetLights": street_light_data}},
+                status=status.HTTP_200_OK
+            )
+        
+class GetDrainage(APIView):
+    """
+    API endpoint to retrieve drainage data.
+
+    Methods:
+    --------
+    get(request, drainageId=None):
+        - If drainageId is provided, fetches the specific drainage record.
+        - If drainageId is not provided, fetches all drainage records.
+        - Returns appropriate success or error messages.
+    """
+
+    def get(self, request, drainageId=None):
+        """
+        Handles GET request to fetch drainage details.
+
+        Parameters:
+            request (HttpRequest): The HTTP request object.
+            drainageId (int, optional): The ID of the drainage to fetch.
+
+        Returns:
+            Response: JSON response containing drainage data or an error message.
+        """
+        if drainageId:
+            if not can_convert_to_int(drainageId):
+                return Response({"message": "Invalid Drainage Id", "success": False}, status=status.HTTP_400_BAD_REQUEST)
+            drainageId = int(drainageId)
+            # Fetch drainage details for a specific drainage ID
+            drainage_obj = Drainage.objects.filter(drainageId=drainageId).values().first()
+            if drainage_obj:
+                return Response(
+                    {"success": True, "message": "Data fetched successfully", "data": {"drainage": drainage_obj}},
+                    status=status.HTTP_200_OK
+                )
+            else:
+                return Response({"success": False, "message": "No data found"}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            # Fetch all drainage records
+            drainages = Drainage.objects.all()
+            if not drainages.exists():
+                return Response({"success": False, "message": "No data found"}, status=status.HTTP_404_NOT_FOUND)
+
+            drainage_data = list(drainages.values())
+            return Response(
+                {"success": True, "message": "Data fetched successfully", "data": {"drainages": drainage_data}},
+                status=status.HTTP_200_OK
+            )
