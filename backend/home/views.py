@@ -8,6 +8,9 @@ from home.models import *
 from django.contrib.auth.hashers import check_password
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.utils.timezone import now
+from home.area import *
+from home.drainage import *
+from home.streetLight import *
 
 
 def can_convert_to_int(s):
@@ -273,7 +276,7 @@ class RequestView(APIView):
                 for manpower_obj in manpower_objs:
                     manpowerData.append(
                                 {
-                                    "id": manpower_obj["id"],
+                                    "id": manpower_obj["workerType_id"],
                                     "workerType": manpower_obj["workerType_id"],
                                     "workerCount": manpower_obj["workerCount"]
                                 }
@@ -283,7 +286,7 @@ class RequestView(APIView):
                 for machine_obj in machine_objs:
                     machineData.append(
                                 {
-                                    "id": machine_obj["id"],
+                                    "id": machine_obj["machineType_id"],
                                     "machineType": machine_obj["machineType_id"],
                                     "machineCount": machine_obj["machineCount"]
                                 }
@@ -293,13 +296,14 @@ class RequestView(APIView):
                 for material_obj in material_objs:
                     materialData.append(
                                 {
-                                    "id": material_obj["id"],
+                                    "id": material_obj["materialType_id"],
                                     "materialType": material_obj["materialType_id"],
                                     "materialCount": material_obj["materialCount"]
                                 }
                             )
                 request_data = {
                                 "id": request_obj['requestId'],
+                                "requestId": request_obj['requestId'],
                                 "areaCode": request_obj['areaCode_id'],
                                 "service": request_obj['service'],
                                 "serviceCode": request_obj['serviceCode'],
@@ -360,6 +364,7 @@ class RequestView(APIView):
                 requests.append(
                             {
                                 "id": areaRequest['requestId'],
+                                "requestId": areaRequest['requestId'],
                                 "areaCode": areaRequest['areaCode_id'],
                                 "service": areaRequest['service'],
                                 "serviceCode": areaRequest['serviceCode'],
@@ -393,6 +398,7 @@ class RequestView(APIView):
                 requests.append(
                             {
                                 "id": AllRequest['requestId'],
+                                "requestId": AllRequest['requestId'],
                                 "areaCode": AllRequest['areaCode_id'],
                                 "service": AllRequest['service'],
                                 "serviceCode": AllRequest['serviceCode'],
@@ -597,11 +603,16 @@ class ManpowerView(APIView):
             # Fetch manpower details for a specific worker type
             manpower_obj = ManPower.objects.filter(workerType=workerType).values().first()
             if manpower_obj:
+                manpower_data = {
+                                "id": manpower_obj["workerType"],
+                                "workerType": manpower_obj["workerType"],
+                                "workerCount": manpower_obj["workerCount"]
+                            }
                 return Response(
                         {
                             "success": True, 
                             "message": "Data fetched successfully", 
-                            "data": manpower_obj
+                            "data": manpower_data
                         },
                         status=status.HTTP_200_OK
                     )
@@ -627,11 +638,20 @@ class ManpowerView(APIView):
                         status=status.HTTP_404_NOT_FOUND
                     )
             manpower_data = list(manpower.values())
+            manpowerData = []
+            for manpower in manpower_data:
+                manpowerData.append(
+                                {
+                                    "id": manpower["workerType"],
+                                    "workerType": manpower["workerType"],
+                                    "workerCount": manpower["workerCount"]
+                                }
+                            )
             return Response(
                         {
                             "success": True, 
                             "message": "Data fetched successfully", 
-                            "data": manpower_data
+                            "data": manpowerData
                         },
                         status=status.HTTP_200_OK
                     )
@@ -695,11 +715,16 @@ class MachineView(APIView):
             # Fetch machine details for a specific machine type
             machine_obj = Machine.objects.filter(machineType=machineType).values().first()
             if machine_obj:
+                machine_data = {
+                                "id": machine_obj["machineType"],
+                                "machineType": machine_obj["machineType"],
+                                "machineCount": machine_obj["machineCount"]
+                                }
                 return Response(
                             {
                                 "success": True, 
                                 "message": "Data fetched successfully", 
-                                "data":machine_obj
+                                "data":machine_data
                             },
                             status=status.HTTP_200_OK
                         )
@@ -724,12 +749,21 @@ class MachineView(APIView):
                             }, 
                             status=status.HTTP_404_NOT_FOUND
                         )
+            machineData = []
             machine_data = list(machine.values())
+            for machine in machine_data:
+                machineData.append({
+                                "id": machine["machineType"],
+                                "machineType": machine["machineType"],
+                                "machineCount": machine["machineCount"]
+                                }
+                            )
+
             return Response(
                         {
                             "success": True, 
                             "message": "Data fetched successfully", 
-                            "data": machine_data
+                            "data": machineData
                         },
                         status=status.HTTP_200_OK
                     )
@@ -792,11 +826,16 @@ class MaterialView(APIView):
             # Fetch material details for a specific material type
             material_obj = Material.objects.filter(materialType=materialType).values().first()
             if material_obj:
+                material_data = {
+                                "id": material_obj["materialType"],
+                                "materialType": material_obj["materialType"],
+                                "materialCount": material_obj["materialCount"]
+                            }
                 return Response(
                             {
                                 "success": True, 
                                 "message": "Data fetched successfully", 
-                                "data": material_obj
+                                "data": material_data
                             },
                             status=status.HTTP_200_OK
                         )
@@ -822,11 +861,20 @@ class MaterialView(APIView):
                             status=status.HTTP_404_NOT_FOUND
                         )
             material_data = list(material.values())
+            materialData = []
+            for material in material_data:
+                materialData.append(
+                                        {
+                                            "id": material["materialType"],
+                                            "materialType": material["materialType"],
+                                            "materialCount": material["materialCount"]
+                                        }
+                                    )
             return Response(
                         {
                             "success": True, 
                             "message": "Data fetched successfully", 
-                            "data": material_data
+                            "data": materialData
                         },
                         status=status.HTTP_200_OK
                     )
@@ -900,6 +948,7 @@ class RoadView(APIView):
             road_obj = Road.objects.filter(roadId=roadId).values().first()
             if road_obj:
                 road = {
+                        "id": road_obj["roadId"],
                         "roadId": road_obj["roadId"],
                         "areaCode": road_obj["areaCode_id"]
                     }
@@ -937,6 +986,7 @@ class RoadView(APIView):
             for road in roads:
                 roadData.append(
                         {
+                            "id": road["roadId"],
                             "roadId": road["roadId"],
                             "areaCode": road["areaCode_id"]
                         }
@@ -1001,377 +1051,54 @@ class RoadView(APIView):
         )
 
 class StreetLightView(APIView):
-    """
-    API endpoint to retrieve street light data.
-
-    Methods:
-    --------
-    get(request, streetLightId=None):
-        - If streetLightId is provided, fetches the specific street light record.
-        - If streetLightId is not provided, fetches all street light records.
-        - Returns appropriate success or error messages.
-    """
-
     def get(self, request, streetLightId=None):
-        """
-        Handles GET request to fetch street light details.
-
-        Parameters:
-            request (HttpRequest): The HTTP request object.
-            streetLightId (int, optional): The ID of the street light to fetch.
-
-        Returns:
-            Response: JSON response containing street light data or an error message.
-        """
         if streetLightId:
-            if not can_convert_to_int(streetLightId):
-                return Response(
-                            {
-                                "message": "Invalid Street Light Id", 
-                                "success": False, 
-                                "data": []
-                            }, 
-                            status=status.HTTP_400_BAD_REQUEST
-                        )
-            streetLightId = int(streetLightId)
-            # Fetch street light details for a specific street light ID
-            street_light_obj = StreetLight.objects.filter(streetLightId=streetLightId).values().first()
-            if street_light_obj:
-                streetLight = {
-                            "streetLightId": street_light_obj["streetLightId"],
-                            "areaCode": street_light_obj["areaCode_id"],
-                            "status": street_light_obj["status"]
-                        }
-                return Response(
-                            {
-                                "success": True, 
-                                "message": "Data fetched successfully", 
-                                "data": streetLight
-                            },
-                            status=status.HTTP_200_OK
-                        )
-            else:
-                return Response(
-                            {
-                                "success": False, 
-                                "message": "No data found", 
-                                "data": []
-                            }, 
-                            status=status.HTTP_404_NOT_FOUND
-                        )
+            response, status = getParticularStreetLight(streetLightId)
+            return Response(response, status)
         else:
-            # Fetch all street light records
-            street_lights = StreetLight.objects.all()
-            if not street_lights.exists():
-                return Response(
-                            {
-                                "success": False, 
-                                "message": "No data found", 
-                                "data": []
-                            }, 
-                            status=status.HTTP_404_NOT_FOUND
-                        )
-            street_lights = list(street_lights.values())
-            streetLightData = list()
-            for street_light in street_lights:
-                streetLightData.append(
-                                {
-                                    "streetLightId": street_light["streetLightId"],
-                                    "areaCode": street_light["areaCode_id"],
-                                    "status": street_light["status"]
-                                }
-                            )
-            return Response(
-                        {
-                            "success": True, 
-                            "message": "Data fetched successfully", 
-                            "data": streetLightData
-                        },
-                        status=status.HTTP_200_OK
-                    )
+            response, status = getAllStreetLight()
+            return Response(response, status)
     def post(self, request):
-        """
-        Handles POST request to add a new street light.
-
-        Parameters:
-            request (HttpRequest): The HTTP request object containing street light details.
-
-        Returns:
-            Response: JSON response indicating success or failure.
-        """
         street_light_data = request.data
-        
-        # Validate input
-        street_light_id = street_light_data.get("streetLightId")
-        area_code = street_light_data.get("areaCode")
-        lightStatus = street_light_data.get("status")
-        
+        street_light_id = request.data["streetLightId"]
+        area_code = request.data["areaCode"]
+        lightStatus = request.data["status"]
         if not street_light_id or not area_code or not lightStatus:
-            return Response(
-                {"message": "streetLightId, lightstatus and areaCode are required", "success": False, "data": {}},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            response = {"message": "streetLightId, lightstatus and areaCode are required", "success": False, "data": []}
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+        response, status = addStreetLight(street_light_id, area_code, lightStatus) 
+        return Response(response, status)
         
-        if not can_convert_to_int(street_light_id):
-            return Response(
-                {"message": "Invalid streetLightId", "success": False, "data": {}},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        if not Area.objects.filter(areaCode=area_code).exists():
-            return Response(
-                {"message": "Invalid areaCode", "success": False, "data": {}},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        street_light_id = int(street_light_id)
-        
-        if StreetLight.objects.filter(streetLightId=street_light_id).exists():
-            return Response(
-                {"message": "streetLightId already exists", "success": False, "data": {}},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        # Create and save the new street light entry
-        street_light = StreetLight(streetLightId=street_light_id, areaCode_id=area_code, status=lightStatus)
-        street_light.save()
-        
-        return Response(
-            {"success": True, "message": "Street Light added successfully", "data": {"streetLightId": street_light_id, "areaCode": area_code}},
-            status=status.HTTP_201_CREATED
-        )
         
 class DrainageView(APIView):
-    """
-    API endpoint to retrieve drainage data.
-
-    Methods:
-    --------
-    get(request, drainageId=None):
-        - If drainageId is provided, fetches the specific drainage record.
-        - If drainageId is not provided, fetches all drainage records.
-        - Returns appropriate success or error messages.
-    """
-
     def get(self, request, drainageId=None):
-        """
-        Handles GET request to fetch drainage details.
-
-        Parameters:
-            request (HttpRequest): The HTTP request object.
-            drainageId (int, optional): The ID of the drainage to fetch.
-
-        Returns:
-            Response: JSON response containing drainage data or an error message.
-        """
         if drainageId:
-            if not can_convert_to_int(drainageId):
-                return Response(
-                            {
-                                "message": "Invalid Drainage Id", 
-                                "success": False, 
-                                "data": []
-                            }, 
-                            status=status.HTTP_400_BAD_REQUEST
-                        )
-            drainageId = int(drainageId)
-            # Fetch drainage details for a specific drainage ID
-            drainage_obj = Drainage.objects.filter(drainageId=drainageId).values().first()
-            if drainage_obj:
-                drainage = {
-                            "drainageId": drainage_obj["drainageId"],
-                            "areaCode": drainage_obj["areaCode_id"],
-                            "status": drainage_obj["status"]
-                        }
-                return Response(
-                            {
-                                "success": True, 
-                                "message": "Data fetched successfully", 
-                                "data": drainage
-                            },
-                            status=status.HTTP_200_OK
-                        )
-            else:
-                return Response(
-                            {
-                                "success": False, 
-                                "message": "No data found",
-                                "data": []
-                            }, 
-                            status=status.HTTP_404_NOT_FOUND
-                        )
+            response, status = getParticularDrainage(drainageId)
+            return Response(response, status)
         else:
-            # Fetch all drainage records
-            drainages = Drainage.objects.all()
-            if not drainages.exists():
-                return Response(
-                            {
-                                "success": False, 
-                                "message": "No data found",
-                                "data": []
-                            }, 
-                            status=status.HTTP_404_NOT_FOUND
-                        )
-            drainageData = list()
-            drainages = list(drainages.values())    
-            for drainage in drainages:
-                drainageData.append(
-                    {
-                        "drainageId": drainage["drainageId"],
-                        "areaCode": drainage["areaCode_id"],
-                        "status": drainage["status"]
-                    }
-                )
-            return Response(
-                        {
-                            "success": True, 
-                            "message": "Data fetched successfully", 
-                            "data": drainageData
-                        },
-                        status=status.HTTP_200_OK
-                    )
+            response, status = getAllDrainage()
+            return Response(response, status)
     
     def post(self, request):
-        """
-        Handles POST request to add a new drainage.
-
-        Parameters:
-            request (HttpRequest): The HTTP request object containing drainage details.
-
-        Returns:
-            Response: JSON response indicating success or failure.
-        """
-        drainage_data = request.data
-        
-        # Validate input
-        drainage_id = drainage_data.get("drainageId")
-        area_code = drainage_data.get("areaCode")
-        drainageStatus = drainage_data.get("drainageStatus")
-        
+        drainage_id = request.data["drainageId"]
+        area_code = request.data["areaCode"]
+        drainageStatus = request.data["drainageStatus"]
         if not drainage_id or not area_code or not drainageStatus:
-            return Response(
-                {"message": "drainageId, drainageStatus and areaCode are required", "success": False, "data": {}},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        if not can_convert_to_int(drainage_id):
-            return Response(
-                {"message": "Invalid drainageId", "success": False, "data": {}},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        if not Area.objects.filter(areaCode=area_code).exists():
-            return Response(
-                {"message": "Invalid areaCode", "success": False, "data": {}},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        drainage_id = int(drainage_id)
-        
-        if Drainage.objects.filter(drainageId=drainage_id).exists():
-            return Response(
-                {"message": "drainageId already exists", "success": False, "data": {}},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        # Create and save the new drainage entry
-        drainage = Drainage(drainageId=drainage_id, areaCode_id=area_code, status=drainageStatus)
-        drainage.save()
-        
-        return Response(
-            {"success": True, "message": "Drainage added successfully", "data": {"drainageId": drainage_id, "areaCode": area_code}},
-            status=status.HTTP_201_CREATED
-        )
+            response = {"message": "Drainage Id, Drainage Status and Area Code are required", "success": False, "data": []}
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+        response, status = addDrainage(drainage_id, area_code, drainageStatus)
+        return Response(response, status)
 
 class AreaView(APIView):
+    def get(self, request, areaId=None):
+        response, status = getArea(areaId)
+        return Response(response, status)   
+
     def post(self, request):
         areaCode = request.data['areaCode']
         areaName = request.data['areaName']
         if not areaCode or not areaName:
-            return Response(
-                        {
-                            "success": False, 
-                            "message": "Invalid Data"
-                        }, 
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
-        if Area.objects.filter(areaCode=areaCode).exists():
-            return Response(
-                        {
-                            "success": False, 
-                            "message": "Area already exists"
-                        }, 
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
-        obj = Area.objects.create(areaCode=areaCode, areaName=areaName)
-        obj.save()
-        return Response(
-                    {
-                        "success": True, 
-                        "message": "Area added successfully"
-                    }, 
-                    status=status.HTTP_200_OK
-                )
-
-    def get(self, request, areaId=None):
-        if areaId:
-            if not can_convert_to_int(areaId):
-                return Response(
-                            {
-                                "message": "Invalid Area Id", 
-                                "success": False
-                            }, 
-                            status=status.HTTP_400_BAD_REQUEST
-                        )
-            areaId = int(areaId)
-            area_obj = Area.objects.filter(areaCode=areaId).values().first()
-            if area_obj:
-                area = {
-                            "areaCode": area_obj["areaCode"],
-                            "areaName": area_obj["areaName"]
-                        }
-                return Response(
-                            {
-                                "success": True, 
-                                "message": "Data fetched successfully", 
-                                "data": area
-                            },
-                            status=status.HTTP_200_OK
-                        )
-            else:
-                return Response(
-                            {
-                                "success": True, 
-                                "message": "No data found",
-                                "data": []
-                            }, 
-                            status=status.HTTP_404_NOT_FOUND
-                        )
-        else:
-            areas = Area.objects.all()
-            if not areas.exists():
-                return Response(
-                            {
-                                "success": False, 
-                                "message": "No data found",
-                                "data" :[]
-                            }, 
-                            status=status.HTTP_404_NOT_FOUND
-                        )
-            areaData = list()
-            areas = list(areas.values())
-            for area in areas:
-                areaData.append(
-                            {
-                                "areaCode": area["areaCode"],
-                                "areaName": area["areaName"]
-                            }
-                        )
-            return Response(
-                        {
-                            "success": True, 
-                            "message": "Data fetched successfully", 
-                            "data": areaData
-                        },
-                        status=status.HTTP_200_OK
-                    )
+            response = {"success": False,"message": "Both Area Code and Area Name should be present", "data": []}
+            return Response(response,status=status.HTTP_400_BAD_REQUEST)
+        response,http_status = createArea(areaCode, areaName)
+        return Response(response,http_status)  
