@@ -259,7 +259,9 @@ class RequestView(APIView):
                 return Response(
                             {
                                 "message": "Invalid Request Id", 
-                                "success": False}, 
+                                "success": False,
+                                "data": []
+                            }, 
                             status=status.HTTP_400_BAD_REQUEST
                         )
             requestId = int(requestId)
@@ -323,7 +325,7 @@ class RequestView(APIView):
                         {
                             "message": "No request found with this request Id",
                             "success": False, 
-                            "data": {}
+                            "data": []
                         }, 
                         status=status.HTTP_400_BAD_REQUEST
                     )
@@ -348,7 +350,7 @@ class RequestView(APIView):
                             {
                                 "message": "Invalid areaCode", 
                                 "success": False, 
-                                "data": {}
+                                "data": []
                             }, 
                             status=status.HTTP_404_NOT_FOUND
                         )
@@ -380,7 +382,7 @@ class RequestView(APIView):
                             {
                                 "message": "No request found", 
                                 "success": True, 
-                                "data": requests
+                                "data": []
                             }, 
                             status=status.HTTP_200_OK
                         )
@@ -419,7 +421,7 @@ class RequestView(APIView):
             try:
                 req = Request.objects.get(pk=requestId)
             except Request.DoesNotExist:
-                return Response({"message": "Request not found", "success": False}, status=status.HTTP_404_NOT_FOUND)
+                return Response({"message": "Request not found", "success": False, "data": []}, status=status.HTTP_404_NOT_FOUND)
 
             # Validate and update basic request fields
             req.areaCode_id = data.get("areaCode", req.areaCode_id)
@@ -608,7 +610,7 @@ class ManpowerView(APIView):
                         {
                             "success": False, 
                             "message": "No data found",
-                            "data": {}
+                            "data": []
                         }, 
                         status=status.HTTP_404_NOT_FOUND
                     )
@@ -620,7 +622,7 @@ class ManpowerView(APIView):
                         {
                             "success": False, 
                             "message": "No data found", 
-                            "data": {}
+                            "data": []
                         }, 
                         status=status.HTTP_404_NOT_FOUND
                     )
@@ -706,7 +708,7 @@ class MachineView(APIView):
                             {
                                 "success": False, 
                                 "message": "No data found", 
-                                "data": {}
+                                "data": []
                             }, 
                             status=status.HTTP_404_NOT_FOUND
                         )
@@ -718,7 +720,7 @@ class MachineView(APIView):
                             {
                                 "success": False, 
                                 "message": "No data found", 
-                                "data": {}
+                                "data": []
                             }, 
                             status=status.HTTP_404_NOT_FOUND
                         )
@@ -803,7 +805,7 @@ class MaterialView(APIView):
                             {
                                 "success": False, 
                                 "message": "No data found", 
-                                "data": {}
+                                "data": []
                             }, 
                             status=status.HTTP_404_NOT_FOUND
                         )
@@ -815,7 +817,7 @@ class MaterialView(APIView):
                             {
                                 "success": False, 
                                 "message": "No data found", 
-                                "data": {}
+                                "data": []
                             }, 
                             status=status.HTTP_404_NOT_FOUND
                         )
@@ -889,7 +891,7 @@ class RoadView(APIView):
                             {
                                 "message": "Invalid Road Id", 
                                 "success": False, 
-                                "data": {}
+                                "data": []
                             }, 
                             status=status.HTTP_400_BAD_REQUEST
                         )
@@ -914,7 +916,7 @@ class RoadView(APIView):
                             {
                                 "success": False, 
                                 "message": "No data found", 
-                                "data": {}
+                                "data": []
                             }, 
                             status=status.HTTP_404_NOT_FOUND
                         )
@@ -926,7 +928,7 @@ class RoadView(APIView):
                             {
                                 "success": False, 
                                 "message": "No data found", 
-                                "data": {}
+                                "data": []
                             }, 
                             status=status.HTTP_404_NOT_FOUND
                         )
@@ -1027,7 +1029,7 @@ class StreetLightView(APIView):
                             {
                                 "message": "Invalid Street Light Id", 
                                 "success": False, 
-                                "data": {}
+                                "data": []
                             }, 
                             status=status.HTTP_400_BAD_REQUEST
                         )
@@ -1053,7 +1055,7 @@ class StreetLightView(APIView):
                             {
                                 "success": False, 
                                 "message": "No data found", 
-                                "data": {}
+                                "data": []
                             }, 
                             status=status.HTTP_404_NOT_FOUND
                         )
@@ -1065,7 +1067,7 @@ class StreetLightView(APIView):
                             {
                                 "success": False, 
                                 "message": "No data found", 
-                                "data": {}
+                                "data": []
                             }, 
                             status=status.HTTP_404_NOT_FOUND
                         )
@@ -1168,7 +1170,7 @@ class DrainageView(APIView):
                             {
                                 "message": "Invalid Drainage Id", 
                                 "success": False, 
-                                "data": {}
+                                "data": []
                             }, 
                             status=status.HTTP_400_BAD_REQUEST
                         )
@@ -1193,7 +1195,8 @@ class DrainageView(APIView):
                 return Response(
                             {
                                 "success": False, 
-                                "message": "No data found"
+                                "message": "No data found",
+                                "data": []
                             }, 
                             status=status.HTTP_404_NOT_FOUND
                         )
@@ -1204,7 +1207,8 @@ class DrainageView(APIView):
                 return Response(
                             {
                                 "success": False, 
-                                "message": "No data found"
+                                "message": "No data found",
+                                "data": []
                             }, 
                             status=status.HTTP_404_NOT_FOUND
                         )
@@ -1339,7 +1343,7 @@ class AreaView(APIView):
                             {
                                 "success": True, 
                                 "message": "No data found",
-                                "data": {}
+                                "data": []
                             }, 
                             status=status.HTTP_404_NOT_FOUND
                         )
@@ -1349,7 +1353,8 @@ class AreaView(APIView):
                 return Response(
                             {
                                 "success": False, 
-                                "message": "No data found"
+                                "message": "No data found",
+                                "data" :[]
                             }, 
                             status=status.HTTP_404_NOT_FOUND
                         )
