@@ -14,12 +14,12 @@ def createArea(areaCode, areaName):
 
 def getParticularArea(areaCode):
     data = list()
-    objs = Area.objects.filter(areaCode=areaCode)
-    if not objs.exists():
+    obj = Area.objects.filter(areaCode=areaCode)
+    if not obj.exists():
         response = {"success": False, "message": "Area does not exist", "data": data}
-        return response, status.HTTP_400_BAD_REQUEST
-    for obj in objs:
-        data.append({"id": obj.areaCode, "areaCode": obj.areaCode, "areaName": obj.areaName})
+        return response, status.HTTP_200_OK
+    obj = obj[0]
+    data = {"id": obj.areaCode, "areaCode": obj.areaCode, "areaName": obj.areaName}
     response = {"success": True, "message": "Data fetched successfully", "data": data}
     return response, status.HTTP_200_OK
 
