@@ -234,12 +234,13 @@ class RequestView(APIView):
                         status=status.HTTP_400_BAD_REQUEST
                     )
         obj = Request.objects.create(areaCode=area, description=description, serviceCode=serviceCode, service=service, status=requestStatus)
-        print(obj.requestId)
         Stats.objects.create(requestId=obj, raiseDate=now())
+        SchedulingQueue.objects.create(requestId=obj, priority=0)
         requestId = obj.requestId
         request_obj = Request.objects.filter(requestId=requestId).values().first()
         if request_obj:
             stats_obj = Stats.objects.filter(requestId=requestId).values().first()
+            schedule_obj = SchedulingQueue.objects.filter(requestId=requestId).values().first()
             manpower_objs = list(ReqManpower.objects.filter(requestId=requestId).values())
             manpowerData = list()
             for manpower_obj in manpower_objs:
@@ -279,6 +280,7 @@ class RequestView(APIView):
                             "description": request_obj['description'],
                             "progress": request_obj['progress'],
                             "status": request_obj['status'],
+                            "priority": schedule_obj["priority"] if schedule_obj else 0,
                             "raiseDate": stats_obj["raiseDate"] if stats_obj else "",
                             "startDate": stats_obj["startDate"] if stats_obj else "",
                             "finishDate": stats_obj["finishDate"] if stats_obj else "",
@@ -310,6 +312,7 @@ class RequestView(APIView):
             request_obj = Request.objects.filter(requestId=requestId).values().first()
             if request_obj:
                 stats_obj = Stats.objects.filter(requestId=requestId).values().first()
+                schedule_obj = SchedulingQueue.objects.filter(requestId=requestId).values().first()
                 manpower_objs = list(ReqManpower.objects.filter(requestId=requestId).values())
                 manpowerData = list()
                 for manpower_obj in manpower_objs:
@@ -349,6 +352,7 @@ class RequestView(APIView):
                                 "description": request_obj['description'],
                                 "progress": request_obj['progress'],
                                 "status": request_obj['status'],
+                                "priority": schedule_obj["priority"] if schedule_obj else 0,
                                 "raiseDate": stats_obj["raiseDate"] if stats_obj else "",
                                 "startDate": stats_obj["startDate"] if stats_obj else "",
                                 "finishDate": stats_obj["finishDate"] if stats_obj else "",
@@ -484,6 +488,10 @@ class RequestView(APIView):
 
             stats.save()
 
+            Schedule, _ = SchedulingQueue.objects.get_or_create(requestId=req)
+            Schedule.priority = data.get("priority", Schedule.priority)
+            Schedule.save()
+
             # Update Manpower
             for mp in data.get("manpower", []):
                 worker_type = mp.get("workerType")
@@ -606,6 +614,7 @@ class RequestView(APIView):
             request_obj = Request.objects.filter(requestId=requestId).values().first()
             if request_obj:
                 stats_obj = Stats.objects.filter(requestId=requestId).values().first()
+                schedule_obj = SchedulingQueue.objects.filter(requestId=requestId).values().first()
                 manpower_objs = list(ReqManpower.objects.filter(requestId=requestId).values())
                 manpowerData = list()
                 for manpower_obj in manpower_objs:
@@ -645,6 +654,7 @@ class RequestView(APIView):
                                 "description": request_obj['description'],
                                 "progress": request_obj['progress'],
                                 "status": request_obj['status'],
+                                "priority": schedule_obj["priority"] if schedule_obj else 0,
                                 "raiseDate": stats_obj["raiseDate"] if stats_obj else "",
                                 "startDate": stats_obj["startDate"] if stats_obj else "",
                                 "finishDate": stats_obj["finishDate"] if stats_obj else "",
