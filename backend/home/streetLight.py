@@ -45,6 +45,6 @@ def addStreetLight(street_light_id, area_code, lightStatus):
         response = {"message": "streetLightId already exists", "success": False, "data": data}
         return response, status.HTTP_200_OK
     StreetLight.objects.create(streetLightId=street_light_id, areaCode_id=area_code, status=lightStatus)
-    data, _ = getAllStreetLight()
+    data, _ = getParticularStreetLight(street_light_id)
     response = {"success": True, "message": "Street Light added successfully", "data": data["data"]}
     return response, status.HTTP_201_CREATED

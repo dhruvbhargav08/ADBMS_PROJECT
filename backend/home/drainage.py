@@ -45,6 +45,6 @@ def addDrainage(drainage_id, area_code, drainageStatus):
         return response, status.HTTP_200_OK
 
     Drainage.objects.create(drainageId=drainage_id, areaCode_id=area_code, status=drainageStatus)
-    data, _ = getAllDrainage()
+    data, _ = getParticularDrainage(drainage_id)
     response = {"success": True, "message": "Drainage added successfully", "data": data["data"]}
     return response, status.HTTP_201_CREATED

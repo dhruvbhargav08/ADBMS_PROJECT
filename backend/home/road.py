@@ -42,6 +42,6 @@ def addRoad(road_id, areaCode):
         response = {"message": "roadId already exists", "success": False, "data": []}
         return response, status.HTTP_200_OK
     Road.objects.create(roadId=road_id, areaCode_id=areaCode)
-    data, _ = getAllRoad()
+    data, _ = getParticularRoad(road_id)
     response = {"success": True, "message": "Road added successfully", "data": data["data"]}
     return response, status.HTTP_201_CREATED

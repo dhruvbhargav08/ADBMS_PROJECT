@@ -8,7 +8,7 @@ def createArea(areaCode, areaName):
         response = {"success": False,"message": "Area already exists"}
         return response, status.HTTP_400_BAD_REQUEST
     Area.objects.create(areaCode=areaCode, areaName=areaName)
-    data, _ = getAllArea() 
+    data, _ = getParticularArea(areaCode)
     response = {"success": True, "message": "Area added successfully", "data": data["data"]}
     return response, status.HTTP_200_OK
 

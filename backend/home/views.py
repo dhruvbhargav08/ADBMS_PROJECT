@@ -234,30 +234,66 @@ class RequestView(APIView):
                         status=status.HTTP_400_BAD_REQUEST
                     )
         obj = Request.objects.create(areaCode=area, description=description, serviceCode=serviceCode, service=service, status=requestStatus)
+        print(obj.requestId)
         Stats.objects.create(requestId=obj, raiseDate=now())
-        AllRequests = Request.objects.all().values()
-        requests = []
-        for AllRequest in AllRequests:
-            requests.append(
-                        {
-                            "id": AllRequest['requestId'],
-                            "requestId": AllRequest['requestId'],
-                            "areaCode": AllRequest['areaCode_id'],
-                            "service": AllRequest['service'],
-                            "serviceCode": AllRequest['serviceCode'],
-                            "description": AllRequest['description'],
-                            "progress": AllRequest['progress'],
-                            "status": AllRequest['status']
+        requestId = obj.requestId
+        request_obj = Request.objects.filter(requestId=requestId).values().first()
+        if request_obj:
+            stats_obj = Stats.objects.filter(requestId=requestId).values().first()
+            manpower_objs = list(ReqManpower.objects.filter(requestId=requestId).values())
+            manpowerData = list()
+            for manpower_obj in manpower_objs:
+                manpowerData.append(
+                            {
+                                "id": manpower_obj["workerType_id"],
+                                "workerType": manpower_obj["workerType_id"],
+                                "workerCount": manpower_obj["workerCount"]
+                            }
+                        )
+            machine_objs = ReqMachine.objects.filter(requestId=requestId).values()
+            machineData = list()
+            for machine_obj in machine_objs:
+                machineData.append(
+                            {
+                                "id": machine_obj["machineType_id"],
+                                "machineType": machine_obj["machineType_id"],
+                                "machineCount": machine_obj["machineCount"]
+                            }
+                        )
+            material_objs = ReqMaterial.objects.filter(requestId=requestId).values()
+            materialData = list()
+            for material_obj in material_objs:
+                materialData.append(
+                            {
+                                "id": material_obj["materialType_id"],
+                                "materialType": material_obj["materialType_id"],
+                                "materialCount": material_obj["materialCount"]
+                            }
+                        )
+            request_data = {
+                            "id": request_obj['requestId'],
+                            "requestId": request_obj['requestId'],
+                            "areaCode": request_obj['areaCode_id'],
+                            "service": request_obj['service'],
+                            "serviceCode": request_obj['serviceCode'],
+                            "description": request_obj['description'],
+                            "progress": request_obj['progress'],
+                            "status": request_obj['status'],
+                            "raiseDate": stats_obj["raiseDate"] if stats_obj else "",
+                            "startDate": stats_obj["startDate"] if stats_obj else "",
+                            "finishDate": stats_obj["finishDate"] if stats_obj else "",
+                            "manpower": manpowerData,
+                            "machines": machineData,
+                            "materials": materialData
                         }
+            return Response(
+                        {
+                            "message": "Request created successfully", 
+                            "success": True, 
+                            "data": request_data
+                        }, 
+                        status=status.HTTP_200_OK
                     )
-        return Response(
-                    {
-                        "success": True, 
-                        "message": "Request added successfully",
-                        "data": requests
-                    }, 
-                    status=status.HTTP_200_OK
-                )
     
     def get(self, request, requestId=None):
         if requestId:  
@@ -349,7 +385,7 @@ class RequestView(APIView):
             except Exception:
                 return Response({"message": "Invalid Authorization header", "success": False}, status=status.HTTP_400_BAD_REQUEST)
 
-            if "areaCode" in auth_data.keys() or auth_data.get("areaCode")!="":
+            if "areaCode" in auth_data.keys():
                 areaCode = auth_data.get("areaCode")
                 area = Area.objects.filter(areaCode=areaCode).first()
                 if not area:
@@ -567,7 +603,63 @@ class RequestView(APIView):
                 material_obj.save()
             
 
-            return Response({"message": "Request updated successfully", "success": True}, status=status.HTTP_200_OK)
+            request_obj = Request.objects.filter(requestId=requestId).values().first()
+            if request_obj:
+                stats_obj = Stats.objects.filter(requestId=requestId).values().first()
+                manpower_objs = list(ReqManpower.objects.filter(requestId=requestId).values())
+                manpowerData = list()
+                for manpower_obj in manpower_objs:
+                    manpowerData.append(
+                                {
+                                    "id": manpower_obj["workerType_id"],
+                                    "workerType": manpower_obj["workerType_id"],
+                                    "workerCount": manpower_obj["workerCount"]
+                                }
+                            )
+                machine_objs = ReqMachine.objects.filter(requestId=requestId).values()
+                machineData = list()
+                for machine_obj in machine_objs:
+                    machineData.append(
+                                {
+                                    "id": machine_obj["machineType_id"],
+                                    "machineType": machine_obj["machineType_id"],
+                                    "machineCount": machine_obj["machineCount"]
+                                }
+                            )
+                material_objs = ReqMaterial.objects.filter(requestId=requestId).values()
+                materialData = list()
+                for material_obj in material_objs:
+                    materialData.append(
+                                {
+                                    "id": material_obj["materialType_id"],
+                                    "materialType": material_obj["materialType_id"],
+                                    "materialCount": material_obj["materialCount"]
+                                }
+                            )
+                request_data = {
+                                "id": request_obj['requestId'],
+                                "requestId": request_obj['requestId'],
+                                "areaCode": request_obj['areaCode_id'],
+                                "service": request_obj['service'],
+                                "serviceCode": request_obj['serviceCode'],
+                                "description": request_obj['description'],
+                                "progress": request_obj['progress'],
+                                "status": request_obj['status'],
+                                "raiseDate": stats_obj["raiseDate"] if stats_obj else "",
+                                "startDate": stats_obj["startDate"] if stats_obj else "",
+                                "finishDate": stats_obj["finishDate"] if stats_obj else "",
+                                "manpower": manpowerData,
+                                "machines": machineData,
+                                "materials": materialData
+                            }
+                return Response(
+                            {
+                                "message": "Request updated successfully", 
+                                "success": True, 
+                                "data": request_data
+                            }, 
+                            status=status.HTTP_200_OK
+                        )
 
         except json.JSONDecodeError:
             return Response({"message": "Invalid JSON", "success": False}, status=status.HTTP_200_OK)

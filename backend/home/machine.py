@@ -35,10 +35,10 @@ def addMachine(machine_type, machine_count):
         return response,tatus.HTTP_200_OK
     machine, created = Machine.objects.update_or_create(machineType=machine_type, defaults={"machineCount": machine_count})
     if created:
-        data, _ = getAllMachine()
+        data, _ = getParticularMachine(machine_type)
         response = {"success": True, "message": "Machine added successfully.", "data": data["data"]}
         return response, status.HTTP_201_CREATED
     else:
-        data, _ = getAllMachine()
+        data, _ = getParticularMachine(machine_type)
         response = {"success": True, "message": "Machine count updated successfully.", "data": data["data"]}
         return response, status.HTTP_200_OK

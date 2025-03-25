@@ -37,10 +37,10 @@ def addWorker(worker_type, worker_count):
         return response, status.HTTP_200_OK
     manpower, created = ManPower.objects.update_or_create(workerType=worker_type, defaults={"workerCount": worker_count})
     if created:
-        data, _ = getAllWorker()
+        data, _ = getParticularWorker(worker_type)
         response = {"success": True, "message": "Worker added successfully.","data": data["data"]}
         return response, status.HTTP_201_CREATED
     else:
-        data, _ = getAllWorker()
+        data, _ = getParticularWorker(worker_type)
         response = {"success": True, "message": "Worker count updated successfully.","data": data["data"]}
         return response, status.HTTP_200_OK

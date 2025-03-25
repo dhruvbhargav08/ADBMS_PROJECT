@@ -31,10 +31,10 @@ def addMaterial(material_type, material_count):
         return response, status.HTTP_200_OK
     material, created = Material.objects.update_or_create(materialType=material_type, defaults={"materialCount": material_count})
     if created: 
-        data , _ = getAllMaterial()
+        data , _ = getParticularMaterial(material_type)
         response = {"success": True, "message": "material added successfully." ,"data": data["data"]}
         return  response, status.HTTP_201_CREATED
     else:
-        data , _ = getAllMaterial()
+        data , _ = getParticularMaterial(material_type)
         response = {"success": True, "message": "material count updated successfully.", "data": data["data"]}
         return response, status.HTTP_200_OK
