@@ -484,7 +484,89 @@ class RequestView(APIView):
                 stats.startDate = now()  # Set start date when work begins
 
             if req.status == "Completed" and not stats.finishDate:
+                req.progress = 100
                 stats.finishDate = now()  # Set finish date when work is completed
+                for req_manpower in ReqManpower.objects.filter(requestId=req):
+                    manpower_obj = req_manpower.workerType
+                    manpower_obj.workerCount += req_manpower.workerCount
+                    manpower_obj.save()
+                    req_manpower.delete()  # Remove the manpower allocation
+
+                for req_machine in ReqMachine.objects.filter(requestId=req):
+                    machine_obj = req_machine.machineType
+                    machine_obj.machineCount += req_machine.machineCount
+                    machine_obj.save()
+                    req_machine.delete()  # Remove the machine allocation
+
+                for req_material in ReqMaterial.objects.filter(requestId=req):
+                    material_obj = req_material.materialType
+                    material_obj.materialCount += req_material.materialCount
+                    material_obj.save()
+                    req_material.delete()  # Remove the material allocation
+
+                # Remove the scheduling queue entry as well
+                SchedulingQueue.objects.filter(requestId=req).delete()
+                req.save()
+                request_obj = Request.objects.filter(requestId=requestId).values().first()
+                if request_obj:
+                    stats_obj = Stats.objects.filter(requestId=requestId).values().first()
+                    schedule_obj = SchedulingQueue.objects.filter(requestId=requestId).values().first()
+                    manpower_objs = list(ReqManpower.objects.filter(requestId=requestId).values())
+                    manpowerData = list()
+                    for manpower_obj in manpower_objs:
+                        manpowerData.append(
+                                    {
+                                        "id": manpower_obj["workerType_id"],
+                                        "workerType": manpower_obj["workerType_id"],
+                                        "workerCount": manpower_obj["workerCount"]
+                                    }
+                                )
+                    machine_objs = ReqMachine.objects.filter(requestId=requestId).values()
+                    machineData = list()
+                    for machine_obj in machine_objs:
+                        machineData.append(
+                                    {
+                                        "id": machine_obj["machineType_id"],
+                                        "machineType": machine_obj["machineType_id"],
+                                        "machineCount": machine_obj["machineCount"]
+                                    }
+                                )
+                    material_objs = ReqMaterial.objects.filter(requestId=requestId).values()
+                    materialData = list()
+                    for material_obj in material_objs:
+                        materialData.append(
+                                    {
+                                        "id": material_obj["materialType_id"],
+                                        "materialType": material_obj["materialType_id"],
+                                        "materialCount": material_obj["materialCount"]
+                                    }
+                                )
+                    request_data = {
+                                    "id": request_obj['requestId'],
+                                    "requestId": request_obj['requestId'],
+                                    "areaCode": request_obj['areaCode_id'],
+                                    "service": request_obj['service'],
+                                    "serviceCode": request_obj['serviceCode'],
+                                    "description": request_obj['description'],
+                                    "progress": request_obj['progress'],
+                                    "status": request_obj['status'],
+                                    "priority": schedule_obj["priority"] if schedule_obj else 0,
+                                    "raiseDate": stats_obj["raiseDate"] if stats_obj else "",
+                                    "startDate": stats_obj["startDate"] if stats_obj else "",
+                                    "finishDate": stats_obj["finishDate"] if stats_obj else "",
+                                    "manpower": manpowerData,
+                                    "machines": machineData,
+                                    "materials": materialData
+                                }
+                    return Response(
+                                {
+                                    "message": "Request updated successfully", 
+                                    "success": True, 
+                                    "data": request_data
+                                }, 
+                                status=status.HTTP_200_OK
+                            )
+                return Response({"success": True,"message": "Request updated successfully"}, status=status.HTTP_200_OK)
 
             stats.save()
 
