@@ -3,6 +3,14 @@ from home.models import *
 from rest_framework import status  
 from home.utils import *
 
+def getRoadByArea(areaCode):
+    area = Area.objects.filter(areaCode=areaCode).first()
+    objs = Road.objects.filter(areaCode=area)
+    for obj in objs:
+        data.append({"id": obj.roadId, "roadId": obj.roadId, "areaCode": obj.areaCode_id})
+    response = {"success": True, "message": "Data fetched successfully", "data": data}
+    return response, status.HTTP_200_OK
+
 def getParticularRoad(roadId):
     data = dict()
     if not can_convert_to_int(roadId):

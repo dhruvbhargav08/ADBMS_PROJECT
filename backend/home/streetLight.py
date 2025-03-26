@@ -3,6 +3,14 @@ from home.models import *
 from rest_framework import status  
 from home.utils import *
 
+getStreetLightByArea(areaCode):
+    area = Area.objects.filter(areaCode=areaCode).first()
+    objs = StreetLight.objects.filter(areaCode=area)
+    for obj in objs:
+        data.append({"id": obj.streetLightId, "streetLightId": obj.streetLightId, "areaCode": obj.areaCode_id, "status": obj.status})
+    response = {"success": True, "message": "Data fetched successfully", "data": data}
+    return response, status.HTTP_200_OK
+
 def getParticularStreetLight(streetLightId):
     data = dict()
     if not can_convert_to_int(streetLightId):

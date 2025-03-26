@@ -819,11 +819,24 @@ class MaterialView(APIView):
 
 class RoadView(APIView):
     def get(self, request, roadId=None):
+        auth_header = request.headers.get("Authorization")
+        if not auth_header:
+            return Response({"message": "Authorization header is required", "success": False}, status=status.HTTP_401_UNAUTHORIZED)
+        try:
+            _, encoded_data = auth_header.split(" ") 
+            decoded_data = base64.b64decode(encoded_data).decode("utf-8")
+            auth_data = json.loads(decoded_data)
+        except Exception:
+            return Response({"message": "Invalid Authorization header", "success": False}, status=status.HTTP_400_BAD_REQUEST)
         if roadId:
             response, status = getParticularRoad(roadId)
             return Response(response, status)
-        else:
-            response, status =getAllRoad()
+        elif "areaCode" in auth_data.keys():
+            areaCode = auth_data.get("areaCode")
+            response, status = getRoadByArea(areaCode)
+            return Response(response, status)
+        else:  
+            response, status = getAllRoad()
             return Response(response, status)
     def post(self, request):
         road_id = request.data["roadId"]
@@ -836,8 +849,21 @@ class RoadView(APIView):
 
 class StreetLightView(APIView):
     def get(self, request, streetLightId=None):
+        auth_header = request.headers.get("Authorization")
+        if not auth_header:
+            return Response({"message": "Authorization header is required", "success": False}, status=status.HTTP_401_UNAUTHORIZED)
+        try:
+            _, encoded_data = auth_header.split(" ") 
+            decoded_data = base64.b64decode(encoded_data).decode("utf-8")
+            auth_data = json.loads(decoded_data)
+        except Exception:
+            return Response({"message": "Invalid Authorization header", "success": False}, status=status.HTTP_400_BAD_REQUEST)
         if streetLightId:
             response, status = getParticularStreetLight(streetLightId)
+            return Response(response, status)
+        elif "areaCode" in auth_data.keys():
+            areaCode = auth_data.get("areaCode")
+            response, status = getStreetLightByArea(areaCode)
             return Response(response, status)
         else:
             response, status = getAllStreetLight()
@@ -856,8 +882,21 @@ class StreetLightView(APIView):
         
 class DrainageView(APIView):
     def get(self, request, drainageId=None):
+        auth_header = request.headers.get("Authorization")
+        if not auth_header:
+            return Response({"message": "Authorization header is required", "success": False}, status=status.HTTP_401_UNAUTHORIZED)
+        try:
+            _, encoded_data = auth_header.split(" ") 
+            decoded_data = base64.b64decode(encoded_data).decode("utf-8")
+            auth_data = json.loads(decoded_data)
+        except Exception:
+            return Response({"message": "Invalid Authorization header", "success": False}, status=status.HTTP_400_BAD_REQUEST)
         if drainageId:
             response, status = getParticularDrainage(drainageId)
+            return Response(response, status)
+        elif "areaCode" in auth_data.keys():
+            areaCode = auth_data.get("areaCode")
+            response, status = getDrainageByArea(areaCode)
             return Response(response, status)
         else:
             response, status = getAllDrainage()
