@@ -3,9 +3,10 @@ from home.models import *
 from rest_framework import status  
 from home.utils import *
 
-getStreetLightByArea(areaCode):
+def getStreetLightByArea(areaCode):
     area = Area.objects.filter(areaCode=areaCode).first()
     objs = StreetLight.objects.filter(areaCode=area)
+    data = list()
     for obj in objs:
         data.append({"id": obj.streetLightId, "streetLightId": obj.streetLightId, "areaCode": obj.areaCode_id, "status": obj.status})
     response = {"success": True, "message": "Data fetched successfully", "data": data}

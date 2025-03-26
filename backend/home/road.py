@@ -6,6 +6,7 @@ from home.utils import *
 def getRoadByArea(areaCode):
     area = Area.objects.filter(areaCode=areaCode).first()
     objs = Road.objects.filter(areaCode=area)
+    data = list()
     for obj in objs:
         data.append({"id": obj.roadId, "roadId": obj.roadId, "areaCode": obj.areaCode_id})
     response = {"success": True, "message": "Data fetched successfully", "data": data}

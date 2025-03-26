@@ -3,9 +3,10 @@ from home.models import *
 from rest_framework import status  
 from home.utils import *
 
-def etDrainageByArea(areaCode):
+def getDrainageByArea(areaCode):
     area = Area.objects.filter(areaCode=areaCode).first()
     objs = Drainage.objects.filter(areaCode=area)
+    data = list()
     for obj in objs:
         data.append({"id": obj.drainageId, "drainageId": obj.drainageId, "areaCode": obj.areaCode_id, "status": obj.status})
     response = {"success": True, "message": "Data fetched successfully", "data": data}
